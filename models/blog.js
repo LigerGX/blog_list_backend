@@ -1,10 +1,12 @@
+/* eslint-disable no-param-reassign */
+/* eslint-disable no-underscore-dangle */
 const mongoose = require('mongoose')
 
 const blogSchema = new mongoose.Schema({
   title: String,
   author: String,
   url: String,
-  likes: Number
+  likes: Number,
 })
 
 blogSchema.set('toJSON', {
@@ -12,7 +14,7 @@ blogSchema.set('toJSON', {
     returnedObject.id = returnedObject._id.toString()
     delete returnedObject._id
     delete returnedObject.__v
-  }
+  },
 })
 
-module.exports = Blog = mongoose.model('Blog', blogSchema)
+module.exports = mongoose.model('Blog', blogSchema)
