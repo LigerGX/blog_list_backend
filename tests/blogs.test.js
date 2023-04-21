@@ -90,6 +90,51 @@ describe('POST request', () => {
   })
 })
 
+describe('DELETE request', () => {
+  test('can make a successful DELETE request', async () => {
+    const blogs = await api.get('/api/blogs')
+    const blogToDelete = blogs.body[0]
+
+    await api.delete(`/api/blogs/${blogToDelete.id}`)
+      .expect(204)
+
+    const blogsAfter = await api.get('/api/blogs')
+    const contents = blogsAfter.body.map((blog) => blog.title)
+
+    expect(blogsAfter.body).toHaveLength(blogs.body.length - 1)
+    expect(contents).not.toContain(blogToDelete.title)
+  })
+})
+
+describe('PUT request', () => {
+  test('can make a succesful PUT request', async () => {
+    const blogs = await api.get('/api/blogs')
+    const blogToUpdate = blogs.body[0]
+    const updateObject = {
+      ...blogToUpdate,
+      likes: 99,
+    }
+
+    const response = await api
+      .put(`/api/blogs/${blogToUpdate.id}`)
+      .send(updateObject)
+
+    expect(response.status).toBe(200)
+  })
+
+  test('malformed request will return an error', async () => {
+    const blogs = await api.get('/api/blogs')
+    const blogToUpdate = blogs.body[0]
+    const updateObject = {
+      title: null,
+    }
+
+    await api.put(`/api/blogs/${blogToUpdate.id}`)
+      .send(updateObject)
+      .expect(400)
+  })
+})
+
 afterAll(async () => {
   await mongoose.connection.close()
 })
