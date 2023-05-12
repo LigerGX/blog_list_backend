@@ -1,21 +1,51 @@
+/* eslint-disable consistent-return */
+/* eslint-disable no-underscore-dangle */
 const blogRouter = require('express').Router()
+const jwt = require('jsonwebtoken')
 const logger = require('../utils/logger')
 const Blog = require('../models/blog')
 
 blogRouter.get('/', async (req, res, next) => {
   try {
-    const blogs = await Blog.find({})
+    const blogs = await Blog.find({}).populate('user')
     res.json(blogs)
   } catch (error) {
     next(error)
   }
 })
 
-blogRouter.post('/', async (req, res, next) => {
-  const blog = new Blog(req.body)
-
+blogRouter.get('/:id', async (req, res, next) => {
   try {
+    const blog = await Blog.findById(req.params.id).populate('user')
+
+    if (!blog) {
+      return res.status(404).json({ error: 'blog not found' })
+    }
+    res.json(blog)
+  } catch (error) {
+    next(error)
+  }
+})
+
+blogRouter.post('/', async (req, res, next) => {
+  try {
+    const { token, user } = req
+
+    if (!token) {
+      return res.status(401).json({ error: 'missing token' })
+    }
+
+    const decodedToken = jwt.verify(token, process.env.SECRET_KEY)
+    if (!decodedToken.id) {
+      return res.status(401).json({ error: 'token invalid' })
+    }
+
+    const blog = new Blog({ ...req.body, user: user.id })
+
     const result = await blog.save()
+    user.blogs = user.blogs.concat(result._id)
+    await user.save()
+
     res.status(201).json(result)
   } catch (error) {
     next(error)
@@ -24,7 +54,19 @@ blogRouter.post('/', async (req, res, next) => {
 
 blogRouter.delete('/:id', async (req, res, next) => {
   try {
+    const { token, user } = req
+
+    if (!token) {
+      return res.status(401).json({ error: 'missing token' })
+    }
+
+    const blogToDelete = await Blog.findById(req.params.id)
+    if (blogToDelete.user.toString() !== user.id) {
+      return res.status(401).json({ error: 'Access Forbidden' })
+    }
+
     const deletedBlog = await Blog.findByIdAndDelete(req.params.id)
+
     if (deletedBlog) {
       logger.info(`Deleted blog with id ${req.params.id}`)
       res.sendStatus(204)

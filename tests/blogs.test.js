@@ -2,9 +2,11 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../models/blog')
+const User = require('../models/user')
 const blogsUtil = require('./blogs_test_util')
 
 const api = supertest(app)
+let token
 
 beforeAll(async () => {
   await Blog.deleteMany({})
@@ -15,6 +17,24 @@ beforeAll(async () => {
   })
 
   await Promise.all(promiseArray)
+
+  await User.deleteMany({})
+
+  const user = {
+    username: 'Testboy',
+    password: 'test123',
+    name: 'Test Boy',
+  }
+
+  await api.post('/api/users').send(user)
+
+  const res = await api.post('/api/login')
+    .send({
+      username: 'Testboy',
+      password: 'test123',
+    })
+
+  token = res.body.token
 })
 
 describe('GET request', () => {
@@ -44,6 +64,7 @@ describe('POST request', () => {
 
     await api.post('/api/blogs')
       .send(blog)
+      .set('Authorization', `Bearer ${token}`)
       .expect('Content-Type', /application\/json/)
       .expect(201)
 
@@ -62,7 +83,9 @@ describe('POST request', () => {
       url: 'vtooberguide.com',
     }
 
-    const response = await api.post('/api/blogs').send(blog)
+    const response = await api.post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(blog)
     expect(response.body.likes).toBe(0)
   })
 
@@ -74,19 +97,34 @@ describe('POST request', () => {
     }
 
     await api.post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(blog)
       .expect(400)
   })
 
-  test('if no title property, respond with status 400', async () => {
+  test('if no url property, respond with status 400', async () => {
     const blog = {
       title: 'Nier Guide',
       author: 'Nie Sorcerie',
       likes: 5883,
     }
     await api.post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(blog)
       .expect(400)
+  })
+
+  test('if no token, respond with status 401', async () => {
+    const blog = {
+      title: 'Digimon World',
+      author: 'Ginjou Higiri',
+      url: 'ginjouguide.com',
+      likes: 136,
+    }
+
+    await api.post('/api/blogs')
+      .send(blog)
+      .expect(401)
   })
 })
 
@@ -96,6 +134,7 @@ describe('DELETE request', () => {
     const blogToDelete = blogs.body[0]
 
     await api.delete(`/api/blogs/${blogToDelete.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .expect(204)
 
     const blogsAfter = await api.get('/api/blogs')

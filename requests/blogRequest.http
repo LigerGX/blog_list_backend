@@ -3,6 +3,7 @@ GET http://localhost:3003/api/blogs
 ###
 POST http://localhost:3003/api/blogs
 content-type: application/json
+Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkthbWEiLCJpZCI6IjY0NGIyYzY3NDdkZjI2ZTEzN2M4Mzg5YyIsImlhdCI6MTY4MzYwODU1M30.TDp3W2JHWcqE0pWaE-8o9xBwS4Eq9b-kmTLc0FgoI8s'
 
 {
   "title": "Subnautica Playguide",
