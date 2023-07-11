@@ -4,6 +4,7 @@ const mongoose = require('mongoose')
 const blogRouter = require('./controllers/blogRouter')
 const userRouter = require('./controllers/userRouter')
 const loginRouter = require('./controllers/loginRouter')
+const testRouter = require('./controllers/testRouter')
 const middleware = require('./utils/middleware')
 const config = require('./utils/config')
 const logger = require('./utils/logger')
@@ -26,6 +27,11 @@ app.use(middleware.tokenExtractor)
 app.use('/api/blogs', middleware.userExtractor, blogRouter)
 app.use('/api/users', userRouter)
 app.use('/api/login', loginRouter)
+
+if (process.env.NODE_ENV === 'test') {
+  app.use('/api/testing', testRouter)
+}
+
 app.use(middleware.unknownEndpoint)
 app.use(middleware.errorHandler)
 
